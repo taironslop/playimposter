@@ -119,7 +119,7 @@ const Home = () => {
             {/* Additional Info */}
             <div className="mt-8 text-center">
               <p className="text-text-secondary text-sm">
-                Reúne a tu tripulación, encuentra al impostor o completa las tareas
+                Descubre quién no tiene la palabra secreta
               </p>
             </div>
           </div>
