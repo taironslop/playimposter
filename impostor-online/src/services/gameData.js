@@ -59,6 +59,25 @@ export const WORD_CATEGORIES = {
     'Periodista',
     'Músico'
   ],
+  'Paises':[
+    "Francia",
+    "España",
+    "Estados Unidos",
+    "Italia",
+    "Japón",
+    "China",
+    "México",
+    "Reino Unido",
+    "Alemania",
+    "Chile",
+    "Colombia",
+    "Perú",
+    "Brasil",
+    "Tailandia",
+    "India",
+    "Portugal",
+    "Argentina"],
+
   'Películas': [
     'Titanic',
     'Avatar',
