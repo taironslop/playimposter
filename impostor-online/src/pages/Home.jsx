@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { createRoom, joinRoom } from '../services/supabaseService';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { createRoom, joinRoom, getPlayers } from '../services/supabaseService';
 
 const Home = () => {
   const [showModal, setShowModal] = useState(null);
@@ -9,6 +9,16 @@ const Home = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    const joinCode = searchParams.get('join');
+    if (joinCode) {
+      setRoomCode(joinCode.toUpperCase());
+      setShowModal('join');
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleCreateRoom = async (e) => {
     e.preventDefault();
@@ -50,6 +60,25 @@ const Home = () => {
     setError(null);
 
     try {
+      // Check if player already exists in room
+      const existingPlayers = await getPlayers(roomCode.trim());
+      const existingPlayer = existingPlayers.find(p => 
+        p.name.toLowerCase() === playerName.trim().toLowerCase()
+      );
+
+      if (existingPlayer) {
+        // Player already exists, reconnect them
+        navigate('/lobby', { 
+          state: { 
+            roomCode: roomCode.trim(), 
+            playerId: existingPlayer.id, 
+            playerName: existingPlayer.name 
+          } 
+        });
+        return;
+      }
+
+      // New player, create them
       const { room, player } = await joinRoom(roomCode.trim(), playerName.trim());
       navigate('/lobby', { 
         state: { 

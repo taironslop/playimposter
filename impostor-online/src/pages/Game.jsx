@@ -28,9 +28,11 @@ const Game = () => {
   const [showCountdown, setShowCountdown] = useState(false);
   const [countdownTriggered, setCountdownTriggered] = useState(false);
 
-  const isHost = players.length > 0 && players[0]?.id === playerId;
+  const activePlayers = players.filter(p => !p.is_spectator);
+  const isHost = activePlayers.length > 0 && activePlayers[0]?.id === playerId;
   const currentPlayer = players.find(p => p.id === playerId);
   const isAlive = currentPlayer?.is_alive;
+  const isSpectator = currentPlayer?.is_spectator;
 
   const processVotingResult = useCallback(async () => {
     const result = getVotingResult(players);
@@ -200,8 +202,16 @@ const Game = () => {
           <h2 className="text-3xl font-bold text-neon-lime mt-1">{room.category}</h2>
         </div>
 
-        {/* Role Card - Only show during PLAYING */}
-        {room.status === 'PLAYING' && (
+        {/* Spectator Notice */}
+        {isSpectator && (
+          <div className="bg-yellow-500/20 border border-yellow-500 text-yellow-400 px-4 py-3 rounded-lg mb-6 text-center">
+            <span className="font-semibold">👁️ Modo Espectador</span>
+            <p className="text-sm mt-1">Estás viendo la partida pero no puedes participar</p>
+          </div>
+        )}
+
+        {/* Role Card - Only show during PLAYING and not spectator */}
+        {room.status === 'PLAYING' && !isSpectator && (
           <div className={`rounded-2xl p-8 mb-8 text-center shadow-2xl border-2 ${
             isImpostor 
               ? 'bg-gradient-to-br from-red-900/50 to-red-950/50 border-red-500' 
@@ -416,12 +426,14 @@ const Game = () => {
               </ul>
             </div>
 
-            <button
-              onClick={handleStartVoting}
-              className="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105"
-            >
-              🗳️ Iniciar Votación
-            </button>
+            {!isSpectator && (
+              <button
+                onClick={handleStartVoting}
+                className="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105"
+              >
+                🗳️ Iniciar Votación
+              </button>
+            )}
           </>
         )}
 

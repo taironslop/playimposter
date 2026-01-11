@@ -7,8 +7,9 @@ const VotingPanel = ({ players, currentPlayerId, roomCode, onVoteComplete }) => 
 
   const currentPlayer = players.find(p => p.id === currentPlayerId);
   const isAlive = currentPlayer?.is_alive;
+  const isSpectator = currentPlayer?.is_spectator;
   const hasVoted = currentPlayer?.voted_for !== null;
-  const alivePlayers = players.filter(p => p.is_alive);
+  const alivePlayers = players.filter(p => p.is_alive && !p.is_spectator);
   const voteCounts = getVoteCounts(players);
 
   const handleVote = async (targetId) => {
@@ -56,13 +57,19 @@ const VotingPanel = ({ players, currentPlayerId, roomCode, onVoteComplete }) => 
       </div>
 
       {/* Status Message */}
-      {!isAlive && (
+      {isSpectator && (
+        <div className="bg-yellow-500/20 border border-yellow-500 rounded-lg p-4 text-center">
+          <span className="text-yellow-400">👁️ Eres espectador. No puedes votar.</span>
+        </div>
+      )}
+
+      {!isSpectator && !isAlive && (
         <div className="bg-gray-800/50 border border-gray-600 rounded-lg p-4 text-center">
           <span className="text-gray-400">💀 Estás eliminado. No puedes votar.</span>
         </div>
       )}
 
-      {isAlive && hasVoted && (
+      {!isSpectator && isAlive && hasVoted && (
         <div className="bg-neon-violet/20 border border-neon-violet rounded-lg p-4 text-center">
           <span className="text-neon-violet">✓ Ya votaste. Esperando a los demás...</span>
         </div>
@@ -110,7 +117,7 @@ const VotingPanel = ({ players, currentPlayerId, roomCode, onVoteComplete }) => 
                   )}
 
                   {/* Vote Button */}
-                  {!isMe && isAlive && !hasVoted && (
+                  {!isMe && isAlive && !hasVoted && !isSpectator && (
                     <button
                       onClick={() => handleVote(player.id)}
                       disabled={voting}

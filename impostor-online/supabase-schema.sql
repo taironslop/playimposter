@@ -49,6 +49,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE rooms;
 ALTER PUBLICATION supabase_realtime ADD TABLE players;
 
 -- =============================================
+-- ENABLE REPLICA IDENTITY FULL FOR DELETE EVENTS
+-- This allows Supabase Realtime to send the old row data on DELETE
+-- =============================================
+ALTER TABLE players REPLICA IDENTITY FULL;
+ALTER TABLE rooms REPLICA IDENTITY FULL;
+
+-- =============================================
 -- ROW LEVEL SECURITY (RLS)
 -- =============================================
 ALTER TABLE rooms ENABLE ROW LEVEL SECURITY;

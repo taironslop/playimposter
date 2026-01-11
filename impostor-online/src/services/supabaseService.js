@@ -128,7 +128,7 @@ export const subscribeToRoom = (roomCode, onRoomChange, onPlayersChange) => {
     .on(
       'postgres_changes',
       {
-        event: '*',
+        event: 'INSERT',
         schema: 'public',
         table: 'players',
         filter: `room_code=eq.${roomCode}`
@@ -136,6 +136,33 @@ export const subscribeToRoom = (roomCode, onRoomChange, onPlayersChange) => {
       async () => {
         const players = await getPlayers(roomCode);
         onPlayersChange(players);
+      }
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'players',
+        filter: `room_code=eq.${roomCode}`
+      },
+      async () => {
+        const players = await getPlayers(roomCode);
+        onPlayersChange(players);
+      }
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'players'
+      },
+      async (payload) => {
+        if (payload.old?.room_code === roomCode) {
+          const players = await getPlayers(roomCode);
+          onPlayersChange(players);
+        }
       }
     )
     .subscribe();
@@ -218,6 +245,22 @@ export const leaveRoom = async (playerId) => {
   }
 };
 
+export const kickPlayer = async (playerId) => {
+  const { data, error } = await supabase
+    .from('players')
+    .update({ is_spectator: true })
+    .eq('id', playerId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error kicking player:', error);
+    throw error;
+  }
+
+  return data;
+};
+
 export const voteFor = async (voterId, targetId) => {
   const { data, error } = await supabase
     .from('players')
@@ -296,9 +339,9 @@ export const getVoteCounts = (players) => {
 };
 
 export const checkVotingComplete = (players) => {
-  const alivePlayers = players.filter(p => p.is_alive);
+  const alivePlayers = players.filter(p => p.is_alive && !p.is_spectator);
   const votedPlayers = alivePlayers.filter(p => p.voted_for !== null);
-  return votedPlayers.length === alivePlayers.length;
+  return votedPlayers.length === alivePlayers.length && alivePlayers.length > 0;
 };
 
 export const getVotingResult = (players) => {

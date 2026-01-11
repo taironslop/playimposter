@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { subscribeToRoom, getRoom, getPlayers, startGame, leaveRoom, getCategories } from '../services/supabaseService';
+import { subscribeToRoom, getRoom, getPlayers, startGame, kickPlayer, getCategories } from '../services/supabaseService';
 
 const Lobby = ({ roomCode, playerId, playerName }) => {
   const [room, setRoom] = useState(null);
@@ -9,10 +9,35 @@ const Lobby = ({ roomCode, playerId, playerName }) => {
   const [error, setError] = useState(null);
   const [starting, setStarting] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const categories = getCategories();
   const navigate = useNavigate();
 
+  const handleCopyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(roomCode);
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 2000);
+    } catch (err) {
+      console.error('Error copying code:', err);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      const link = `${window.location.origin}/?join=${roomCode}`;
+      await navigator.clipboard.writeText(link);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch (err) {
+      console.error('Error copying link:', err);
+    }
+  };
+
   useEffect(() => {
+    if (!roomCode) return;
+
     const loadInitialData = async () => {
       try {
         const roomData = await getRoom(roomCode);
@@ -32,15 +57,23 @@ const Lobby = ({ roomCode, playerId, playerName }) => {
       roomCode,
       (newRoom) => {
         setRoom(newRoom);
-        if (newRoom.status === 'PLAYING') {
-          navigate('/game', { state: { roomCode, playerId, playerName } });
-        }
       },
-      (newPlayers) => setPlayers(newPlayers)
+      (newPlayers) => {
+        console.log('Players updated:', newPlayers);
+        setPlayers(newPlayers);
+      }
     );
 
-    return () => unsubscribe();
-  }, [roomCode, playerId, playerName, navigate]);
+    return () => {
+      unsubscribe();
+    };
+  }, [roomCode]);
+
+  useEffect(() => {
+    if (room?.status === 'PLAYING') {
+      navigate('/game', { state: { roomCode, playerId, playerName } });
+    }
+  }, [room?.status, navigate, roomCode, playerId, playerName]);
 
   const handleStartGame = async () => {
     setStarting(true);
@@ -53,16 +86,18 @@ const Lobby = ({ roomCode, playerId, playerName }) => {
     }
   };
 
-  const handleLeave = async () => {
+  const handleRemovePlayer = async (playerIdToRemove) => {
     try {
-      await leaveRoom(playerId);
-      navigate('/');
+      await kickPlayer(playerIdToRemove);
     } catch (err) {
-      setError('Error al salir de la sala');
+      setError('Error al eliminar jugador');
     }
   };
 
-  const isHost = players.length > 0 && players[0]?.id === playerId;
+  const activePlayers = players.filter(p => !p.is_spectator);
+  const spectators = players.filter(p => p.is_spectator);
+  const isHost = activePlayers.length > 0 && activePlayers[0]?.id === playerId;
+  const isSpectator = spectators.some(p => p.id === playerId);
 
   if (loading) {
     return (
@@ -76,20 +111,79 @@ const Lobby = ({ roomCode, playerId, playerName }) => {
     <div className="min-h-screen bg-dark-bg flex items-center justify-center p-4">
       <div className="max-w-2xl w-full">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Sala de Espera</h1>
-          <div className="bg-dark-surface rounded-lg px-6 py-3 inline-block">
-            <span className="text-text-secondary text-sm">Código de sala:</span>
-            <span className="text-neon-violet text-2xl font-mono font-bold ml-2">{roomCode}</span>
+          <h1 className="text-4xl font-bold text-white mb-4">Sala de Espera</h1>
+          
+          {/* Room Code with Copy */}
+          <div className="bg-dark-surface rounded-lg px-6 py-4 inline-block mb-4">
+            <span className="text-text-secondary text-sm block mb-1">Código de sala:</span>
+            <div className="flex items-center justify-center space-x-3">
+              <span className="text-neon-violet text-3xl font-mono font-bold">{roomCode}</span>
+              <button
+                onClick={handleCopyCode}
+                className={`p-2 rounded-lg transition-all ${
+                  copiedCode 
+                    ? 'bg-green-600 text-white' 
+                    : 'bg-gray-700 hover:bg-gray-600 text-white'
+                }`}
+                title="Copiar código"
+              >
+                {copiedCode ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Copy Link Button */}
+          <div>
+            <button
+              onClick={handleCopyLink}
+              className={`inline-flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
+                copiedLink 
+                  ? 'bg-green-600 text-white' 
+                  : 'bg-neon-violet/20 hover:bg-neon-violet/30 text-neon-violet border border-neon-violet'
+              }`}
+            >
+              {copiedLink ? (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>¡Link copiado!</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
+                  <span>Copiar link de invitación</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
 
+        {/* Spectator Notice */}
+        {isSpectator && (
+          <div className="bg-yellow-500/20 border border-yellow-500 text-yellow-400 px-4 py-3 rounded-lg mb-6 text-center">
+            <span className="font-semibold">👁️ Eres espectador</span>
+            <p className="text-sm mt-1">Puedes ver la partida pero no participar</p>
+          </div>
+        )}
+
         <div className="game-card mb-6">
           <h2 className="text-xl font-semibold text-white mb-4">
-            Jugadores ({players.length}/10)
+            Jugadores ({activePlayers.length}/10)
           </h2>
           
           <div className="space-y-2">
-            {players.map((player, index) => (
+            {activePlayers.map((player, index) => (
               <div
                 key={player.id}
                 className={`flex items-center justify-between p-3 rounded-lg ${
@@ -107,19 +201,59 @@ const Lobby = ({ roomCode, playerId, playerName }) => {
                     <span className="text-neon-lime text-xs">(Tú)</span>
                   )}
                 </div>
-                {index === 0 && (
-                  <span className="text-yellow-500 text-xs font-medium">HOST</span>
-                )}
+                <div className="flex items-center space-x-2">
+                  {index === 0 && (
+                    <span className="text-yellow-500 text-xs font-medium">HOST</span>
+                  )}
+                  {isHost && player.id !== playerId && index !== 0 && (
+                    <button
+                      onClick={() => handleRemovePlayer(player.id)}
+                      className="w-6 h-6 rounded-full bg-red-600 hover:bg-red-500 text-white flex items-center justify-center transition-all hover:scale-110"
+                      title="Expulsar jugador"
+                    >
+                      <span className="text-xs">×</span>
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
 
-          {players.length < 3 && (
+          {activePlayers.length < 3 && (
             <p className="text-text-secondary text-sm mt-4 text-center">
               Se necesitan al menos 3 jugadores para comenzar
             </p>
           )}
         </div>
+
+        {/* Spectators Section */}
+        {spectators.length > 0 && (
+          <div className="game-card mb-6 opacity-70">
+            <h3 className="text-lg font-semibold text-text-secondary mb-3">
+              👁️ Espectadores ({spectators.length})
+            </h3>
+            <div className="space-y-2">
+              {spectators.map((player) => (
+                <div
+                  key={player.id}
+                  className={`flex items-center justify-between p-2 rounded-lg bg-dark-bg/50 ${
+                    player.id === playerId ? 'border border-yellow-500/50' : ''
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-xs">
+                      👁️
+                    </div>
+                    <span className="text-text-secondary font-medium">{player.name}</span>
+                    {player.id === playerId && (
+                      <span className="text-yellow-500 text-xs">(Tú)</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Category Selector - Host Only */}
         {isHost && (
@@ -155,26 +289,17 @@ const Lobby = ({ roomCode, playerId, playerName }) => {
           </div>
         )}
 
-        <div className="flex gap-4">
+        {isHost && (
           <button
-            onClick={handleLeave}
-            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition-all"
+            onClick={handleStartGame}
+            disabled={players.length < 3 || starting}
+            className={`w-full neon-button ${
+              players.length < 3 || starting ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
           >
-            Salir
+            {starting ? 'Iniciando...' : 'Iniciar Partida'}
           </button>
-          
-          {isHost && (
-            <button
-              onClick={handleStartGame}
-              disabled={players.length < 3 || starting}
-              className={`flex-1 neon-button ${
-                players.length < 3 || starting ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-            >
-              {starting ? 'Iniciando...' : 'Iniciar Partida'}
-            </button>
-          )}
-        </div>
+        )}
 
         {!isHost && (
           <p className="text-text-secondary text-center mt-4">
