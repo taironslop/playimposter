@@ -68,8 +68,18 @@ const Lobby = ({ roomCode, playerId, playerName }) => {
       }
     );
 
+    const pollId = setInterval(async () => {
+      try {
+        const latestPlayers = await getPlayers(roomCode);
+        setPlayers(latestPlayers);
+      } catch (err) {
+        // ignore polling errors
+      }
+    }, 3000);
+
     return () => {
       unsubscribe();
+      clearInterval(pollId);
     };
   }, [roomCode]);
 
