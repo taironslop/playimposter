@@ -363,7 +363,7 @@ export const checkVotingResolved = (players) => {
 };
 
 export const getVotingResult = (players) => {
-  const alivePlayers = players.filter(p => p.is_alive);
+  const alivePlayers = players.filter(p => p.is_alive && !p.is_spectator);
   const voteCounts = getVoteCounts(alivePlayers);
   
   const entries = Object.entries(voteCounts);

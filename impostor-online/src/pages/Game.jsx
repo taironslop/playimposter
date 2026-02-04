@@ -24,6 +24,7 @@ const Game = () => {
   const [room, setRoom] = useState(null);
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showResult, setShowResult] = useState(null);
   const [processing, setProcessing] = useState(false);
   const [showCountdown, setShowCountdown] = useState(false);
@@ -37,6 +38,11 @@ const Game = () => {
 
   const processVotingResult = useCallback(async () => {
     const result = getVotingResult(players);
+
+    if (!result) {
+      setProcessing(false);
+      return;
+    }
 
     if (result.tie) {
       setShowResult({ type: 'tie' });
@@ -58,7 +64,9 @@ const Game = () => {
           word: room.secret_word
         });
       } else {
-        const remainingAlive = players.filter(p => p.is_alive && p.id !== result.eliminatedId);
+        const remainingAlive = players.filter(
+          p => p.is_alive && !p.is_spectator && p.id !== result.eliminatedId
+        );
         const impostorAlive = remainingAlive.some(p => p.id === room.impostor_id);
         
         if (!impostorAlive || remainingAlive.length <= 2) {
@@ -116,7 +124,23 @@ const Game = () => {
       (newPlayers) => setPlayers(newPlayers)
     );
 
-    return () => unsubscribe();
+    const pollId = setInterval(async () => {
+      try {
+        const [latestRoom, latestPlayers] = await Promise.all([
+          getRoom(roomCode),
+          getPlayers(roomCode)
+        ]);
+        setRoom(latestRoom);
+        setPlayers(latestPlayers);
+      } catch (err) {
+        // ignore polling errors
+      }
+    }, 3000);
+
+    return () => {
+      unsubscribe();
+      clearInterval(pollId);
+    };
   }, [roomCode, playerId, playerName, navigate]);
 
   useEffect(() => {
@@ -142,10 +166,23 @@ const Game = () => {
   const isImpostor = room?.impostor_id === playerId;
 
   const handleStartVoting = async () => {
+    if (processing) return;
+    if (room?.status !== 'PLAYING') return;
+    setError(null);
+    setProcessing(true);
     try {
       await startVoting(roomCode);
+      const [updatedRoom, updatedPlayers] = await Promise.all([
+        getRoom(roomCode),
+        getPlayers(roomCode)
+      ]);
+      setRoom(updatedRoom);
+      setPlayers(updatedPlayers);
     } catch (err) {
       console.error('Error starting voting:', err);
+      setError('No se pudo iniciar la votación. Reintenta.');
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -203,6 +240,12 @@ const Game = () => {
           <span className="text-text-secondary text-lg">Categoría</span>
           <h2 className="text-3xl font-bold text-neon-lime mt-1">{room.category}</h2>
         </div>
+
+        {error && (
+          <div className="bg-red-500/20 border border-red-500 text-red-400 px-4 py-3 rounded-lg mb-6 text-center">
+            {error}
+          </div>
+        )}
 
         {/* Spectator Notice */}
         {isSpectator && (
@@ -431,7 +474,10 @@ const Game = () => {
             {!isSpectator && (
               <button
                 onClick={handleStartVoting}
-                className="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105"
+                disabled={processing}
+                className={`w-full bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105 ${
+                  processing ? 'opacity-60 cursor-not-allowed' : ''
+                }`}
               >
                 🗳️ Iniciar Votación
               </button>
