@@ -11,6 +11,7 @@ const Lobby = ({ roomCode, playerId, playerName }) => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [showQr, setShowQr] = useState(false);
   const categories = getCategories();
   const navigate = useNavigate();
 
@@ -34,6 +35,9 @@ const Lobby = ({ roomCode, playerId, playerName }) => {
       console.error('Error copying link:', err);
     }
   };
+
+  const inviteLink = `${window.location.origin}/?join=${roomCode}`;
+  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(inviteLink)}`;
 
   useEffect(() => {
     if (!roomCode) return;
@@ -142,32 +146,99 @@ const Lobby = ({ roomCode, playerId, playerName }) => {
 
           {/* Copy Link Button */}
           <div>
-            <button
-              onClick={handleCopyLink}
-              className={`inline-flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
-                copiedLink 
-                  ? 'bg-green-600 text-white' 
-                  : 'bg-neon-violet/20 hover:bg-neon-violet/30 text-neon-violet border border-neon-violet'
-              }`}
-            >
-              {copiedLink ? (
-                <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>¡Link copiado!</span>
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                  </svg>
-                  <span>Copiar link de invitación</span>
-                </>
-              )}
-            </button>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button
+                onClick={handleCopyLink}
+                className={`inline-flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
+                  copiedLink 
+                    ? 'bg-green-600 text-white' 
+                    : 'bg-neon-violet/20 hover:bg-neon-violet/30 text-neon-violet border border-neon-violet'
+                }`}
+              >
+                {copiedLink ? (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>¡Link copiado!</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                    <span>Copiar link de invitación</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={() => setShowQr(true)}
+                className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg transition-all bg-gray-700 hover:bg-gray-600 text-white"
+                title="Mostrar código QR"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h6v6H3V3zm12 0h6v6h-6V3zM3 15h6v6H3v-6zm8 0h2v2h-2v-2zm0 4h2v2h-2v-2zm4-4h2v2h-2v-2zm0 4h6v2h-6v-2zm0-8h6v2h-6v-2z" />
+                </svg>
+                <span>QR</span>
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* QR Modal */}
+        {showQr && (
+          <div
+            className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50"
+            onClick={() => setShowQr(false)}
+          >
+            <div
+              className="bg-dark-surface rounded-2xl p-6 max-w-md w-full border border-gray-700"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-white">Código QR</h3>
+                <button
+                  onClick={() => setShowQr(false)}
+                  className="w-8 h-8 rounded-full bg-gray-700 hover:bg-gray-600 text-white flex items-center justify-center"
+                  title="Cerrar"
+                >
+                  <span className="text-lg">×</span>
+                </button>
+              </div>
+
+              <div className="flex flex-col items-center">
+                <div className="bg-white rounded-xl p-3">
+                  <img
+                    src={qrImageUrl}
+                    alt="QR de invitación"
+                    className="w-[260px] h-[260px]"
+                    loading="lazy"
+                  />
+                </div>
+
+                <p className="text-text-secondary text-sm mt-4 text-center">
+                  Escanéalo para unirse a la sala
+                </p>
+
+                <div className="w-full mt-4 flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={handleCopyLink}
+                    className="flex-1 bg-neon-violet/20 hover:bg-neon-violet/30 text-neon-violet border border-neon-violet px-4 py-2 rounded-lg transition-all"
+                  >
+                    Copiar link
+                  </button>
+                  <button
+                    onClick={() => setShowQr(false)}
+                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-all"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Spectator Notice */}
         {isSpectator && (

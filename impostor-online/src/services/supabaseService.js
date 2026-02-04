@@ -344,6 +344,24 @@ export const checkVotingComplete = (players) => {
   return votedPlayers.length === alivePlayers.length && alivePlayers.length > 0;
 };
 
+export const checkVotingResolved = (players) => {
+  const eligibleVoters = players.filter(p => p.is_alive && !p.is_spectator);
+  if (eligibleVoters.length === 0) return false;
+
+  const votesCast = eligibleVoters.filter(p => p.voted_for !== null).length;
+  const remainingVotes = eligibleVoters.length - votesCast;
+
+  const voteCounts = getVoteCounts(eligibleVoters);
+  const entries = Object.entries(voteCounts);
+  if (entries.length === 0) return false;
+
+  entries.sort((a, b) => b[1] - a[1]);
+  const topVotes = entries[0]?.[1] ?? 0;
+  const secondVotes = entries[1]?.[1] ?? 0;
+
+  return topVotes > secondVotes + remainingVotes;
+};
+
 export const getVotingResult = (players) => {
   const alivePlayers = players.filter(p => p.is_alive);
   const voteCounts = getVoteCounts(alivePlayers);

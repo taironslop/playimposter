@@ -7,6 +7,7 @@ import {
   startVoting, 
   resumeDiscussion,
   checkVotingComplete,
+  checkVotingResolved,
   getVotingResult,
   eliminatePlayer,
   finishGame,
@@ -124,7 +125,7 @@ const Game = () => {
       !showResult && 
       !countdownTriggered &&
       players.length > 0 &&
-      checkVotingComplete(players)
+      (checkVotingComplete(players) || checkVotingResolved(players))
     ) {
       setCountdownTriggered(true);
       setShowCountdown(true);
@@ -179,6 +180,7 @@ const Game = () => {
   };
 
   const votingComplete = checkVotingComplete(players);
+  const votingResolved = checkVotingResolved(players);
 
   if (loading || !room) {
     return (
@@ -267,11 +269,11 @@ const Game = () => {
               roomCode={roomCode}
             />
 
-            {/* Waiting message when all voted */}
-            {votingComplete && (
+            {/* Waiting message when outcome is decided */}
+            {(votingComplete || votingResolved) && (
               <div className="mt-6 text-center">
                 <p className="text-yellow-400 animate-pulse">
-                  ✓ Todos han votado. Procesando...
+                  ✓ Votación decidida. Procesando...
                 </p>
               </div>
             )}
