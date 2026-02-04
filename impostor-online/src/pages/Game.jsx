@@ -388,12 +388,6 @@ const Game = () => {
                       🔄 Volver al Lobby
                     </button>
                   )}
-                  <button
-                    onClick={() => navigate('/')}
-                    className="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-4 px-8 rounded-lg transition-all"
-                  >
-                    Salir
-                  </button>
                 </div>
               </div>
             )}
@@ -420,12 +414,6 @@ const Game = () => {
                       🔄 Volver al Lobby
                     </button>
                   )}
-                  <button
-                    onClick={() => navigate('/')}
-                    className="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-4 px-8 rounded-lg transition-all"
-                  >
-                    Salir
-                  </button>
                 </div>
               </div>
             )}
@@ -499,12 +487,6 @@ const Game = () => {
                   🔄 Volver al Lobby
                 </button>
               )}
-              <button
-                onClick={() => navigate('/')}
-                className="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-4 px-8 rounded-lg transition-all"
-              >
-                Salir
-              </button>
             </div>
           </div>
         )}
