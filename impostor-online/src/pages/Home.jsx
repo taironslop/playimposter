@@ -177,7 +177,10 @@ const Home = () => {
               {showModal === 'create' ? 'Crear Nueva Sala' : 'Unirse a Sala'}
             </h3>
 
-            <form onSubmit={showModal === 'create' ? handleCreateRoom : handleJoinRoom}>
+            <form
+              onSubmit={showModal === 'create' ? handleCreateRoom : handleJoinRoom}
+              autoComplete="off"
+            >
               <div className="space-y-4">
                 <div>
                   <label className="block text-text-secondary text-sm mb-2">
@@ -185,11 +188,13 @@ const Home = () => {
                   </label>
                   <input
                     type="text"
+                    name="player_name"
                     value={playerName}
                     onChange={(e) => setPlayerName(e.target.value)}
                     placeholder="Ingresa tu nombre"
                     className="w-full bg-dark-bg border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-neon-violet"
                     maxLength={20}
+                    autoComplete="nickname"
                     autoFocus
                   />
                 </div>
@@ -201,11 +206,13 @@ const Home = () => {
                     </label>
                     <input
                       type="text"
+                      name="room_code"
                       value={roomCode}
                       onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
                       placeholder="Ej: ABC123"
                       className="w-full bg-dark-bg border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-neon-violet font-mono text-lg tracking-wider"
                       maxLength={6}
+                      autoComplete="one-time-code"
                     />
                   </div>
                 )}

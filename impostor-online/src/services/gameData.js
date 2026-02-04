@@ -89,6 +89,48 @@ export const WORD_CATEGORIES = {
     'Toy Story',
     'Frozen',
     'Batman'
+  ],
+  'Series': [
+    'Breaking Bad',
+    'Game of Thrones',
+    'The Sopranos',
+    'Friends',
+    'The Simpsons',
+    'Stranger Things',
+    'The Office',
+    'Better Call Saul',
+    'The Last of Us',
+    'Black Mirror',
+    'Chernobyl',
+    'Mad Men',
+    'The Bear',
+    'Squid Game',
+    'Lost',
+    'Dark',
+  ],
+  'Deportes': [
+    'Fútbol',
+    'Baloncesto',
+    'Tenis',
+    'Atletismo',
+    'Natación',
+    'Voleibol',
+    'Rugby',
+    'Béisbol',
+    'Boxeo',
+    'Golf'
+  ],
+  'Consolas': [
+    'PlayStation 5',
+    'Xbox Series X',
+    'Nintendo Switch',
+    'PlayStation 4',
+    'Xbox One',
+    'Nintendo 3DS',
+    'PlayStation 2',
+    'Super Nintendo',
+    'Sega Genesis',
+    'Game Boy'
   ]
 };
 
