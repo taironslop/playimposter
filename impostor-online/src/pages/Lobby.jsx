@@ -72,6 +72,9 @@ const Lobby = ({ roomCode, playerId, playerName }) => {
       try {
         const latestPlayers = await getPlayers(roomCode);
         setPlayers(latestPlayers);
+
+        const latestRoom = await getRoom(roomCode);
+        setRoom(latestRoom);
       } catch (err) {
         // ignore polling errors
       }
@@ -94,8 +97,14 @@ const Lobby = ({ roomCode, playerId, playerName }) => {
     setError(null);
     try {
       await startGame(roomCode, selectedCategory || null);
+      const updatedRoom = await getRoom(roomCode);
+      setRoom(updatedRoom);
+      if (updatedRoom?.status === 'PLAYING') {
+        navigate('/game', { state: { roomCode, playerId, playerName } });
+      }
     } catch (err) {
       setError(err.message);
+    } finally {
       setStarting(false);
     }
   };
