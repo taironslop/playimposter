@@ -132,6 +132,9 @@ const Game = () => {
         ]);
         setRoom(latestRoom);
         setPlayers(latestPlayers);
+        if (latestRoom.status === 'LOBBY') {
+          navigate('/lobby', { state: { roomCode, playerId, playerName } });
+        }
       } catch (err) {
         // ignore polling errors
       }
@@ -161,7 +164,10 @@ const Game = () => {
       setCountdownTriggered(false);
       setShowResult(null);
     }
-  }, [room?.status]);
+    if (room?.status === 'LOBBY') {
+      navigate('/lobby', { state: { roomCode, playerId, playerName } });
+    }
+  }, [room?.status, navigate, roomCode, playerId, playerName]);
 
   const isImpostor = room?.impostor_id === playerId;
 
@@ -188,12 +194,20 @@ const Game = () => {
 
   const handleResumeDiscussion = async () => {
     setProcessing(true);
+    setError(null);
     try {
       await resumeDiscussion(roomCode);
+      const [updatedRoom, updatedPlayers] = await Promise.all([
+        getRoom(roomCode),
+        getPlayers(roomCode)
+      ]);
+      setRoom(updatedRoom);
+      setPlayers(updatedPlayers);
       setShowResult(null);
       setCountdownTriggered(false);
     } catch (err) {
       console.error('Error resuming discussion:', err);
+      setError('Error al continuar la discusión. Reintenta.');
     } finally {
       setProcessing(false);
     }
@@ -201,10 +215,13 @@ const Game = () => {
 
   const handleReturnToLobby = async () => {
     setProcessing(true);
+    setError(null);
     try {
       await returnToLobby(roomCode);
+      navigate('/lobby', { state: { roomCode, playerId, playerName } });
     } catch (err) {
       console.error('Error returning to lobby:', err);
+      setError('Error al volver al lobby. Reintenta.');
     } finally {
       setProcessing(false);
     }
